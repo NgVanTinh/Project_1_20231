@@ -5,10 +5,13 @@
 #include <graphics.h>
 #include <math.h>
 #define WIDTH 1000
-#define HEIGHT 646
+#define HEIGHT 660
 #define WINDOW_SIZE 512
-#define MAX_K 256
-#define DISTANCE_HOLD 10
+
+#define MAX_LAG 256
+#define PEAK_THRESHOLD 5800  // nguong dinh
+#define MAX_PEAK_LAG 35
+
 
 typedef struct header {
     char chunk_id[4];
@@ -64,7 +67,7 @@ void drawFillRectangle(int left, int top, int right, int bottom, int color){
     bar(left + 1, top + 1, right, bottom);
 }
 
-// ve gia dien
+// ve giao dien
 void drawInterface(){
 	
     drawFillRectangle(0,0,30,646,LIGHTGRAY);
@@ -123,11 +126,38 @@ void drawLineInWaveForm(int start, float sample_spacing, int color){
 
 // truyen vao du lieu, vi tri mau bat dau cua mau, so mau, mang chua gia tri ham R(k), mau, 
 //toa do y bat dau ve(giong nhau cua ca 2 do thi) con toa do x mac dinh la 0
+
+// Ham kiem tra tinh tuan hoan va tinh f0
+bool find_periodic_peak(float autocorr[], int size, double *f0,int *position) {
+    int max_peak_lag = 0;
+    double max_peak_value = 0.0;
+
+    // Tim dinh co gia tri tuong quan lon nhat - co nhung tan so sai, bi gap boi len
+    for (int i = 1; i < (int) size/2 ; i++) {
+        if (autocorr[i] > max_peak_value && autocorr[i] > autocorr[i-1] && autocorr[i] > autocorr[i+1]) {
+            max_peak_lag = i;
+            max_peak_value = autocorr[i];
+        }
+    }
+
+    if (max_peak_value > PEAK_THRESHOLD && max_peak_lag > MAX_PEAK_LAG ) {
+    	*position = max_peak_lag;
+        *f0 = 16000 / (double)max_peak_lag;
+        float sample_spacing_corr = (float)460.0 /  MAX_LAG;
+        int x = 510 + (int) max_peak_lag * sample_spacing_corr;
+        setcolor(RED);
+        line(x,223,x,421); // yeah
+        return true; 
+    } else {
+        return false; 
+    }
+}
+
 void calculateAndDrawAutoCorrelationAndWWaveForm(int16_t *data, int start, int window_size, float *autocorr, int color, int startY) {
 	
-	// kc giua cac mau la giong nhau o ca 2 do thi
 	float sample_spacing = (float)460.0 /  window_size;
 
+	// ve do thi dang song cua doan 512 mau dang duyet
     for ( int i = 0; i < window_size ; ++i) {
         int x1 = 30 + i * sample_spacing; 
         int y1 = startY - (data[i + start] * 100 / 32767); 
@@ -144,7 +174,7 @@ void calculateAndDrawAutoCorrelationAndWWaveForm(int16_t *data, int start, int w
     memset(autocorr, 0, sizeof(float) * window_size);
 
     // Tính ham tu tuong quan 
-    for (int delay = 0; delay < window_size; ++delay) {
+    for (int delay = 0; delay <= MAX_LAG; ++delay) {
         for (int i = start; i < start + window_size - delay; ++i) {
             autocorr[delay] += data[i] * data[i + delay];
         }
@@ -159,43 +189,53 @@ void calculateAndDrawAutoCorrelationAndWWaveForm(int16_t *data, int start, int w
 	        max_val = fabs(autocorr[i]);
 	    }
 	}
-
-
+	
+		
+	float sample_spacing_corr = (float)460.0 /  MAX_LAG;
     // ve do thi ham tu tuong quan
-    for (int i = 0; i < window_size - 1; ++i) {
-        int y1 = startY -( (autocorr[i] / max_val) * 80 ); 
-        int y2 = startY -( (autocorr[i+1] / max_val) * 80 ); 
-        int x1 = 511 + i * sample_spacing;
-        int x2 = 511 + (i + 1) * sample_spacing;
+    for (int i = 0; i < MAX_LAG - 1; ++i) {
+        int y1 = startY -( (autocorr[i] / max_val) * 90 ); 
+        int y2 = startY -( (autocorr[i+1] / max_val) * 90 ); 
+        int x1 = 511 + i * sample_spacing_corr;
+        int x2 = 511 + (i + 1) * sample_spacing_corr;
 
         setcolor(color);
         line(x1, y1, x2, y2);
     }
     
-
+  
 }
 
 // truyen vao du lieu, so mau cua du lieu, mau , vi tri bat dau ve
 void drawAndClearAutoCorrelation(int16_t *data, int num_samples, int color, int startY) {
     int window_size = WINDOW_SIZE;
     float autocorr[window_size];
+    bool isPeriodic = false;
     int start;
 
-    for (start = 0; start <= num_samples - window_size; start += window_size/2) {
+    for (start = 0; start <= num_samples - window_size/2; start += window_size/2) {
     	
     	float sample_spacing = (float)970 /  num_samples;
-        if(start + window_size/2 >= num_samples){
-        	drawLineInWaveForm(start,sample_spacing,RED);
-        	calculateAndDrawAutoCorrelationAndWWaveForm(data, start, window_size, autocorr, color, startY );
-		}
-		else {
-			resetDrawAutoCorrelation(30,223,490,415);
-			resetDrawAutoCorrelation(511,223,970,416);
-			drawLineInWaveForm(start,sample_spacing,RED);
-	        calculateAndDrawAutoCorrelationAndWWaveForm(data, start, window_size, autocorr, color, startY );
-	        delay(300); 
-	        drawLineInWaveForm(start,sample_spacing,RED);	
-		}
+    	
+		resetDrawAutoCorrelation(30,223,490,420);
+		resetDrawAutoCorrelation(511,223,970,421);
+		drawLineInWaveForm(start,sample_spacing,WHITE);
+        calculateAndDrawAutoCorrelationAndWWaveForm(data, start, window_size, autocorr, color, startY);  
+        double f0 = 0.0;
+		int position = 0;
+	
+	    if (find_periodic_peak(autocorr, 256, &f0, &position) ){
+	        if(f0 <= 400 && f0 > 150){
+	        	//printf("%f\n",f0);
+				int x = 29 + sample_spacing * (start + position) ;
+				int y = (int) 650 - f0/2;
+				setcolor(GREEN);
+				circle(x,y,512*sample_spacing);
+				}
+			}
+		
+        delay(300); 
+        if(start + window_size/2 < num_samples ) drawLineInWaveForm(start,sample_spacing,WHITE);	
     }
 }
 
@@ -238,10 +278,12 @@ int main() {
     int width = WIDTH;
     int height = HEIGHT;
     initwindow(width, height);
+
     
     drawInterface();
     
 	drawWaveform(inbuff16, SampleNumber,32767, GREEN, 111);
+
 	
 	drawAndClearAutoCorrelation(inbuff16, SampleNumber, GREEN, 333 );
 
