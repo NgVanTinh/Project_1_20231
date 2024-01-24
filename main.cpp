@@ -4,13 +4,15 @@
 #include <conio.h>
 #include <graphics.h>
 #include <math.h>
-#define WIDTH 1000
-#define HEIGHT 660
-#define WINDOW_SIZE 512
+#include <string>
+#include <windows.h>
 
+#define WIDTH 1100 //kich thuoc cua cua so winbgi
+#define HEIGHT 730
+
+#define WINDOW_SIZE 512
 #define MAX_LAG 256
-#define PEAK_THRESHOLD 5800  // nguong dinh
-#define MAX_PEAK_LAG 35
+#define PEAK_THRESHOLD 6000  // nguong dinh
 
 
 typedef struct header {
@@ -31,65 +33,197 @@ typedef struct header {
 
 typedef struct header* header_p;
 
+// ve duong net dut
+void drawDashLineX(int x1, int y1, int x2, int y2,int dashLength, int gapLength) {
+    int deltaX = x2 - x1;
+    int length = abs(deltaX);
+
+    // Tính toán so luong doan net dua tren chieu dai cua duong
+    int numDashes = length / (dashLength + gapLength);
+
+    // Tính toán khoang cach giua cac doan net
+    float dashX = deltaX / numDashes;
+
+    int currentX = x1;
+
+    for (int i = 0; i < numDashes; i++) {
+        setcolor(YELLOW);
+        line(currentX, y1, currentX + dashX, y2);
+		
+		setcolor(LIGHTGRAY);
+		line(currentX + dashX, y1, currentX + dashX + gapLength, y2);
+		
+        // Di chuyen
+        currentX += dashX + gapLength;
+        if(currentX + dashX + gapLength > x2) break;
+    }
+}
+
+void drawDashLineY(int x1, int y1, int x2, int y2,int dashLength, int gapLength) {
+    int deltaY = y2 - y1;
+    int length = abs(deltaY);
+
+    // Tính toán so luong doan net dua tren chieu dai cua duong
+    int numDashes = length / (dashLength + gapLength);
+
+    // Tính toán khoang cach giua cac doan net
+    float dashY = deltaY / numDashes;
+
+    int currentY = y1;
+
+    for (int i = 0; i < numDashes; i++) {
+        setcolor(YELLOW);
+        line(x1, currentY, x2,currentY + dashY);
+		
+		setcolor(LIGHTGRAY);
+		line(x1, currentY + dashY, x2, currentY + dashY + gapLength);
+		
+        // Di chuyen
+        currentY += dashY + gapLength;
+        if(currentY > y2) break;
+    }
+}
+
 // reset cua so ve ham tu tuong quan
-void resetDrawAutoCorrelation(int left, int top, int right, int bottom){
+void resetDrawAutoCorrelation(int x1, int y1, int x2, int y2){
 	
     setcolor(BLACK);
 
-    // V? vi?n hình ch? nh?t
-    rectangle(left, top, right, bottom);
+    // Ve vien hinh chu nhat
+    rectangle(x1, y1, x2, y2);
 
-    // Ð?t màu n?n và ki?u tô màu
+    // Ðat mau nen va kieu to mau
     setfillstyle(SOLID_FILL, BLACK);
 
-    // Tô màu n?n cho hình ch? nh?t
-    // S? d?ng bar d? t?o hình ch? nh?t d?c màu
-    bar(left + 1, top + 1, right, bottom);
+    // to mau cho nen hcn
+    // tao hcn dac mau
+    bar(x1 + 1, y1 + 1, x2, y2);
     
+    // ve lai truc xy
     
-    setcolor(YELLOW);
-	line(left,333,right,333);
+    int x = x1;
+    int y = y1;
+	for(int i = 1; i <= 3; i++){
+		x += (x2 - x1) / 4;
+		y += (y2 - y1) / 4;
+		drawDashLineX(x1,y,x2,y,4,4);
+		drawDashLineY(x,y1,x,y2,4,4);		
+	}
     
 }
 
 void drawFillRectangle(int left, int top, int right, int bottom, int color){
-	// Ðat màu vi?n hình ch? nh?t (ví d?: tr?ng)
+	
     setcolor(color);
 
-    // V? vi?n hình ch? nh?t
     rectangle(left, top, right, bottom);
 
-    // Ð?t màu n?n và ki?u tô màu
+     // Ðat mau nen va kieu to mau
     setfillstyle(SOLID_FILL, color);
 
-    // Tô màu n?n cho hình ch? nh?t
-    // S? d?ng bar d? t?o hình ch? nh?t d?c màu
+     // to mau cho nen hcn
+    // tao hcn dac mau
     bar(left + 1, top + 1, right, bottom);
 }
 
 // ve giao dien
+
 void drawInterface(){
+
+	// ve cac truc toa do xy cua cua so ve dang song	
+	drawDashLineX(100,80,1000,80,4,4);
+	drawDashLineX(100,130,1000,130,4,4);
+	drawDashLineX(100,180,1000,180,4,4);
 	
-    drawFillRectangle(0,0,30,646,LIGHTGRAY);
-    drawFillRectangle(971,0,1000,646,LIGHTGRAY);
+	int x = 100;
+	for(int i = 1; i <= 8; i++){
+		x += 100;
+		drawDashLineY(x,30,x,230,4,4);		
+	}
+	// ve ca truc cua cua so 512 mau va cua so ham tu tuong quan
+	
+	resetDrawAutoCorrelation(100,260,520,460);
+	resetDrawAutoCorrelation(580,260,1000,460);
+	
+	// ve cac truc xy cua cua so ve tan so
+	drawDashLineX(100,540,1000,540,4,4);
+	drawDashLineX(100,590,1000,590,4,4);
+	drawDashLineX(100,640,1000,640,4,4);
+	
+	int x3 = 100;
+	for(int i = 1; i <= 8; i++){
+		x3 += 100;
+		drawDashLineY(x3,490,x3,690,4,4);		
+	}
+	
+	// ve cac khoi hinh xam bao phu 
+    drawFillRectangle(0,0,99,720,LIGHTGRAY);
+    drawFillRectangle(1000,0,1100,720,LIGHTGRAY);
     
-    drawFillRectangle(30,0,970,10,LIGHTGRAY);
-    drawFillRectangle(30,212,970,222,LIGHTGRAY);
-    drawFillRectangle(30,424,970,434,LIGHTGRAY);
-    drawFillRectangle(30,636,970,646,LIGHTGRAY);
+    drawFillRectangle(100,0,1000,30,LIGHTGRAY);
+    drawFillRectangle(100,231,1000,260,LIGHTGRAY);
+    drawFillRectangle(100,461,1000,490,LIGHTGRAY);
+    drawFillRectangle(100,691,1000,720,LIGHTGRAY);
     
-    drawFillRectangle(491,222,510,424,LIGHTGRAY);
+    drawFillRectangle(521,261,580,460,LIGHTGRAY);
+    
+    // ve cac diem 
+    char string[20];
+    setbkcolor(LIGHTGRAY);
+	setcolor(BLACK);
+	strcpy(string,"29851");
+	outtextxy(40, 30, string);
+	strcpy(string,"0");
+	outtextxy(85, 130, string);
+	strcpy(string,"-29851");
+	outtextxy(40, 230, string);
+	strcpy(string,"5313.0ms");
+	outtextxy(1001, 130, string);
+	strcpy(string,"K = 256");
+	outtextxy(1001, 360, string);
+	strcpy(string,"0");
+	outtextxy(70, 691, string);
+	strcpy(string,"100");
+	outtextxy(70, 640, string);
+	strcpy(string,"200");
+	outtextxy(70, 590, string);
+	strcpy(string,"300");
+	outtextxy(70, 540, string);
+	strcpy(string,"400Hz");
+	outtextxy(60, 490, string);
+	
+	// ve cac toa do x cua cua so ve dang song va ve tan so
+	float number = 0;
+	int x1 = 100;
+	for(int i = 1; i <= 8; i++){
+		x1 += 100;
+		number += 483;
+		char charArr[10];
+		sprintf(charArr, "%.1f", number);
+		outtextxy(x1 - 15, 231, charArr);		
+	}
+	
+	number = 0;
+	int x2 = 100;
+	for(int i = 1; i <= 8; i++){
+		x2 += 100;
+		number += 483;
+		char charArr[10];
+		sprintf(charArr, "%.1f", number);
+		outtextxy(x2 - 15, 691, charArr);		
+	}
+	
 }
 
 void drawWaveform(int16_t *data, int num_samples, int max_amplitude, int color, int startY) {
 //	k/c giua cac mau
 	
-    float sample_spacing = (float)940 /  num_samples;
+    float sample_spacing = (float)900 /  num_samples;
 
     for ( int i = 0; i < num_samples ; ++i) {
-        int x1 = 31 + i * sample_spacing; 
+        int x1 = 101 + i * sample_spacing; 
         int y1 = startY - (data[i] * 100 / max_amplitude); 
-        int x2 = 31 + (i + 1) * sample_spacing; 
+        int x2 = 101 + (i + 1) * sample_spacing; 
         int y2 = startY - (data[i + 1] * 100 / max_amplitude); 
 
         setcolor(color);
@@ -102,10 +236,10 @@ void drawLineInWaveForm(int start, float sample_spacing, int color){
 	static bool isDrawn = false;
     static int *buffer = NULL;
 	
-    int x1 = 30 + start * sample_spacing; 
-    int y1 = 10;
-    int x2 = 30 + (start + WINDOW_SIZE) * sample_spacing; 
-    int y2 = 212; 
+    int x1 = 101 + start * sample_spacing; 
+    int y1 = 31;
+    int x2 = 101 + (start + WINDOW_SIZE) * sample_spacing; 
+    int y2 = 230; 
 
     if (!isDrawn) {
         int size = imagesize(x1, y1, x2, y2);
@@ -124,51 +258,61 @@ void drawLineInWaveForm(int start, float sample_spacing, int color){
 
 }
 
-// truyen vao du lieu, vi tri mau bat dau cua mau, so mau, mang chua gia tri ham R(k), mau, 
-//toa do y bat dau ve(giong nhau cua ca 2 do thi) con toa do x mac dinh la 0
-
-// Ham kiem tra tinh tuan hoan va tinh f0
-bool find_periodic_peak(float autocorr[], int size, double *f0,int *position) {
+ //Ham kiem tra tinh tuan hoan va tinh f0
+bool find_periodic_peak(float *autocorr, float *f0,int *position) {
     int max_peak_lag = 0;
-    double max_peak_value = 0.0;
+    double max_peak_value = autocorr[40];
 
     // Tim dinh co gia tri tuong quan lon nhat - co nhung tan so sai, bi gap boi len
-    for (int i = 1; i < (int) size/2 ; i++) {
-        if (autocorr[i] > max_peak_value && autocorr[i] > autocorr[i-1] && autocorr[i] > autocorr[i+1]) {
+    // do tan so giong nua la tu 150-400Hz
+    for (int i = 40; i < 120 ; i++) {
+        if (autocorr[i] > max_peak_value) {
             max_peak_lag = i;
             max_peak_value = autocorr[i];
         }
     }
+    
+	if((max_peak_value > PEAK_THRESHOLD) 
+	//&& (autocorr[2 * max_peak_lag] > max_peak_value-EPSILON) && (autocorr[2 * max_peak_lag] < max_peak_value+EPSILON) 
+	) {
+		*position = max_peak_lag;
+	    *f0 = 16000 / (float)max_peak_lag;
+	    float sample_spacing_corr = (float)420.0 /  MAX_LAG;
+	    int x = 580 + (int) max_peak_lag * sample_spacing_corr;
+	    setcolor(RED);
+	    line(x,260,x,460);
+	    
+	    return true;
+	}
+	else return false;
+}
 
-    if (max_peak_value > PEAK_THRESHOLD && max_peak_lag > MAX_PEAK_LAG ) {
-    	*position = max_peak_lag;
-        *f0 = 16000 / (double)max_peak_lag;
-        float sample_spacing_corr = (float)460.0 /  MAX_LAG;
-        int x = 510 + (int) max_peak_lag * sample_spacing_corr;
-        setcolor(RED);
-        line(x,223,x,421); // yeah
-        return true; 
-    } else {
-        return false; 
-    }
+void drawFrequencyVariation(int *Index,int start, int sample_number ) {
+	float sample_spacing = (float)(900)/sample_number;
+	int index = *Index;
+	int x = 100 + (start + index)*sample_spacing;
+	
+	double f0 = 16000/index;
+	int y = 690 - (f0-80)/320*200;
+	if ( f0 < 400 && f0 > 160 ) {
+		circle(x , y, 3);
+	}
 }
 
 void calculateAndDrawAutoCorrelationAndWWaveForm(int16_t *data, int start, int window_size, float *autocorr, int color, int startY) {
 	
-	float sample_spacing = (float)460.0 /  window_size;
+	float sample_spacing = (float)420.0 /  window_size;
 
 	// ve do thi dang song cua doan 512 mau dang duyet
     for ( int i = 0; i < window_size ; ++i) {
-        int x1 = 30 + i * sample_spacing; 
-        int y1 = startY - (data[i + start] * 100 / 32767); 
-        int x2 = 30 + (i + 1) * sample_spacing; 
-        int y2 = startY - (data[i + start + 1] * 100 / 32767); 
+        int x1 = 100 + i * sample_spacing; 
+        int y1 = startY - (data[i + start] * 100 / 29851); 
+        int x2 = 100 + (i + 1) * sample_spacing; 
+        int y2 = startY - (data[i + start + 1] * 100 / 29851); 
 
         setcolor(color);
         line(x1, y1, x2, y2);
     }
-    
-    
     // ve do thi ham tu tuong quan
   
     memset(autocorr, 0, sizeof(float) * window_size);
@@ -178,31 +322,30 @@ void calculateAndDrawAutoCorrelationAndWWaveForm(int16_t *data, int start, int w
         for (int i = start; i < start + window_size - delay; ++i) {
             autocorr[delay] += data[i] * data[i + delay];
         }
-        autocorr[delay] /= (window_size - delay); // Chia trung bình
+        autocorr[delay] /= (window_size - delay); // Chia trung bình de chuan hoa gia tri ham tuong quan
     }
 
-    // Tìm giá tri max cua ham tu tuong quang trong doan 512 mau dang xet
+    // Tìm giá tri max cua ham tu tuong quang trong doan 512 mau dang xet de 
+    // xac dinh bien do lon nhat cua do thi ham tu tuong quan 
 	
-	float max_val = fabs(autocorr[0]); 
+	float max_am = fabs(autocorr[0]); 
 	for (int i = 1; i < window_size; ++i) {
-	    if (fabs(autocorr[i])> max_val) {
-	        max_val = fabs(autocorr[i]);
+	    if (fabs(autocorr[i])> max_am) {
+	        max_am = fabs(autocorr[i]);
 	    }
 	}
-	
 		
-	float sample_spacing_corr = (float)460.0 /  MAX_LAG;
+	float sample_spacing_corr = (float)420.0 /  MAX_LAG;
     // ve do thi ham tu tuong quan
     for (int i = 0; i < MAX_LAG - 1; ++i) {
-        int y1 = startY -( (autocorr[i] / max_val) * 90 ); 
-        int y2 = startY -( (autocorr[i+1] / max_val) * 90 ); 
-        int x1 = 511 + i * sample_spacing_corr;
-        int x2 = 511 + (i + 1) * sample_spacing_corr;
+        int y1 = startY -( (autocorr[i] / max_am) * 90 ); 
+        int y2 = startY -( (autocorr[i+1] / max_am) * 90 ); 
+        int x1 = 581 + i * sample_spacing_corr;
+        int x2 = 581 + (i + 1) * sample_spacing_corr;
 
         setcolor(color);
         line(x1, y1, x2, y2);
     }
-    
   
 }
 
@@ -212,43 +355,69 @@ void drawAndClearAutoCorrelation(int16_t *data, int num_samples, int color, int 
     float autocorr[window_size];
     bool isPeriodic = false;
     int start;
-
-    for (start = 0; start <= num_samples - window_size/2; start += window_size/2) {
-    	
-    	float sample_spacing = (float)970 /  num_samples;
-    	
-		resetDrawAutoCorrelation(30,223,490,420);
-		resetDrawAutoCorrelation(511,223,970,421);
-		drawLineInWaveForm(start,sample_spacing,WHITE);
-        calculateAndDrawAutoCorrelationAndWWaveForm(data, start, window_size, autocorr, color, startY);  
-        double f0 = 0.0;
-		int position = 0;
+	float sample_spacing = (float)900 /  num_samples;
 	
-	    if (find_periodic_peak(autocorr, 256, &f0, &position) ){
-	        if(f0 <= 400 && f0 > 150){
-	        	//printf("%f\n",f0);
-				int x = 29 + sample_spacing * (start + position) ;
-				int y = (int) 650 - f0/2;
-				setcolor(GREEN);
-				circle(x,y,512*sample_spacing);
-				}
+    for (start = 0; start <= num_samples - window_size/2; start += window_size/2) {
+		resetDrawAutoCorrelation(100,260,520,460);
+		resetDrawAutoCorrelation(580,260,1000,460);
+		drawLineInWaveForm(start,sample_spacing,WHITE);
+        calculateAndDrawAutoCorrelationAndWWaveForm(data, start, window_size, autocorr, color, startY); 
+        
+        // ve do thi tan so
+        int position = 0;
+        float f0 = 0.0;
+        if(find_periodic_peak(autocorr,&f0,&position))
+        {
+			if ( f0 < 360 && f0 > 160 ) {
+				int x = 100 + (start + position)*sample_spacing;
+				int y = 690 - (int)(f0)/2;
+				setcolor(LIGHTGREEN);
+				circle(x , y, 3);
 			}
+		}
 		
-        delay(300); 
-        if(start + window_size/2 < num_samples ) drawLineInWaveForm(start,sample_spacing,WHITE);	
-    }
+        delay(300);
+        if(start + window_size/2 < num_samples ) drawLineInWaveForm(start,sample_spacing,WHITE);
+	}
+          
 }
 
 int main() {
-    FILE *infile;
+
     int BUFSIZE = 85000;
     header_p meta;
 
-    infile = fopen("xebesvexchef.wav", "rb");
-    if (infile == NULL) {
-        perror("Error opening file");
-        return 1;
+    //Open and read file
+	FILE* infile;
+	OPENFILENAME ofn;
+    char szFile[260];
+    ZeroMemory(&ofn, sizeof(ofn));
+    ofn.lStructSize = sizeof(ofn);
+    ofn.hwndOwner = NULL;
+    ofn.lpstrFile = szFile;
+    ofn.lpstrFile[0] = '\0';
+    ofn.nMaxFile = sizeof(szFile);
+    ofn.lpstrFilter = "WAV Files (*.wav)\0*.wav\0All Files (*.*)\0*.*\0";
+    ofn.nFilterIndex = 1;
+    ofn.lpstrFileTitle = NULL;
+    ofn.nMaxFileTitle = 0;
+    ofn.lpstrInitialDir = NULL;
+    ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+
+    if (GetOpenFileName(&ofn) == TRUE) {
+        // M? t?p tin dã ch?n
+        infile = fopen(ofn.lpstrFile, "rb");
+        if (infile == NULL) {
+        	perror("Error opening file");
+        	exit(1);
+        }
     }
+    else {
+        // Ngu?i dùng dã h?y h?p tho?i ch?n t?p tin
+        printf("Nguoi dung da huy.\n");
+        exit(1);
+    }
+    
     meta = (header_p)malloc(sizeof(header));
     fread(meta, 1, 36, infile); // Read the first 36 bytes
 
@@ -282,10 +451,9 @@ int main() {
     
     drawInterface();
     
-	drawWaveform(inbuff16, SampleNumber,32767, GREEN, 111);
-
+	drawWaveform(inbuff16, SampleNumber,29851, GREEN, 130);
 	
-	drawAndClearAutoCorrelation(inbuff16, SampleNumber, GREEN, 333 );
+	drawAndClearAutoCorrelation(inbuff16, SampleNumber, GREEN, 360 );
 
     getch();
 
