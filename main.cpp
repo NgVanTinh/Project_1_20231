@@ -368,46 +368,52 @@ void drawAndClearAutoCorrelation(int16_t *data, int num_samples, int color, int 
           
 }
 
-int main() {
+int main(int argc, char *argv[]) {
 
     int BUFSIZE = 85000;
     header_p meta;
+    int width = WIDTH;
+    int height = HEIGHT;
+    initwindow(width, height);
+	setcolor(LIGHTGRAY);
+    setbkcolor(LIGHTGRAY);
 
     //Open and read file
 	FILE* infile;
-	infile = fopen("xebesvexchef.wav", "rb");
-    if (infile == NULL) {
-        perror("Error opening file");
-        return 1;
+//	infile = fopen("xebesvexchef.wav", "rb");
+//    if (infile == NULL) {
+//        perror("Error opening file");
+//        return 1;
+//    }
+    
+	OPENFILENAME ofn;
+    char szFile[260];
+    ZeroMemory(&ofn, sizeof(ofn));
+    ofn.lStructSize = sizeof(ofn);
+    ofn.hwndOwner = NULL;
+    ofn.lpstrFile = szFile;
+    ofn.lpstrFile[0] = '\0';
+    ofn.nMaxFile = sizeof(szFile);
+    ofn.lpstrFilter = "WAV Files (*.wav)\0*.wav\0All Files (*.*)\0*.*\0";
+    ofn.nFilterIndex = 1;
+    ofn.lpstrFileTitle = NULL;
+    ofn.nMaxFileTitle = 0;
+    ofn.lpstrInitialDir = NULL;
+    ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+
+    if (GetOpenFileName(&ofn) == TRUE) {
+        // M? t?p tin dã ch?n
+        infile = fopen(ofn.lpstrFile, "rb");
+        if (infile == NULL) {
+        	perror("Error opening file");
+        	exit(1);
+        }
     }
-//	OPENFILENAME ofn;
-//    char szFile[260];
-//    ZeroMemory(&ofn, sizeof(ofn));
-//    ofn.lStructSize = sizeof(ofn);
-//    ofn.hwndOwner = NULL;
-//    ofn.lpstrFile = szFile;
-//    ofn.lpstrFile[0] = '\0';
-//    ofn.nMaxFile = sizeof(szFile);
-//    ofn.lpstrFilter = "WAV Files (*.wav)\0*.wav\0All Files (*.*)\0*.*\0";
-//    ofn.nFilterIndex = 1;
-//    ofn.lpstrFileTitle = NULL;
-//    ofn.nMaxFileTitle = 0;
-//    ofn.lpstrInitialDir = NULL;
-//    ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
-//
-//    if (GetOpenFileName(&ofn) == TRUE) {
-//        // M? t?p tin dã ch?n
-//        infile = fopen(ofn.lpstrFile, "rb");
-//        if (infile == NULL) {
-//        	perror("Error opening file");
-//        	exit(1);
-//        }
-//    }
-//    else {
-//        // Ngu?i dùng dã h?y h?p tho?i ch?n t?p tin
-//        printf("Nguoi dung da huy.\n");
-//        exit(1);
-//    }
+    else {
+        // Ngu?i dùng dã h?y h?p tho?i ch?n t?p tin
+        printf("Nguoi dung da huy.\n");
+        exit(1);
+    }
     
     meta = (header_p)malloc(sizeof(header));
     fread(meta, 1, 36, infile); // Read the first 36 bytes
@@ -435,10 +441,6 @@ int main() {
 	float timeLength = (meta->subchunk2_size * 8.0)/(meta->sample_rate * meta->num_channels * meta->bits_per_sample);
     
     // Ve cac do thi
-    int width = WIDTH;
-    int height = HEIGHT;
-    initwindow(width, height);
-
     
     drawInterface();
     
