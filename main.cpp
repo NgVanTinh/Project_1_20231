@@ -12,8 +12,7 @@
 
 #define WINDOW_SIZE 512
 #define MAX_LAG 256
-#define PEAK_THRESHOLD 6000  // nguong dinh
-
+#define PEAK_THRESHOLD 8000  // nguong dinh
 
 typedef struct header {
     char chunk_id[4];
@@ -259,45 +258,32 @@ void drawLineInWaveForm(int start, float sample_spacing, int color){
 }
 
  //Ham kiem tra tinh tuan hoan va tinh f0
-bool find_periodic_peak(float *autocorr, float *f0,int *position) {
+bool find_periodic_peak(float autocorr[], int size, double *f0,int *position) {
     int max_peak_lag = 0;
-    double max_peak_value = autocorr[40];
+    double max_peak_value = 0.0;
 
     // Tim dinh co gia tri tuong quan lon nhat - co nhung tan so sai, bi gap boi len
-    // do tan so giong nua la tu 150-400Hz
-    for (int i = 40; i < 120 ; i++) {
-        if (autocorr[i] > max_peak_value) {
+    for (int i = 10; i < 115 ; i++) {
+        if (autocorr[i] > max_peak_value && autocorr[i] > autocorr[i-1] && autocorr[i] > autocorr[i+1]) {
             max_peak_lag = i;
             max_peak_value = autocorr[i];
         }
     }
-    
-	if((max_peak_value > PEAK_THRESHOLD) 
-	//&& (autocorr[2 * max_peak_lag] > max_peak_value-EPSILON) && (autocorr[2 * max_peak_lag] < max_peak_value+EPSILON) 
-	) {
-		*position = max_peak_lag;
-	    *f0 = 16000 / (float)max_peak_lag;
-	    float sample_spacing_corr = (float)420.0 /  MAX_LAG;
-	    int x = 580 + (int) max_peak_lag * sample_spacing_corr;
-	    setcolor(RED);
-	    line(x,260,x,460);
-	    
-	    return true;
-	}
-	else return false;
+
+    if (max_peak_value > PEAK_THRESHOLD ) {
+    	*position = max_peak_lag;
+        *f0 = 16000 / (double)max_peak_lag;
+        float sample_spacing_corr = (float)420.0 /  MAX_LAG;
+        int x = 580 + (int) max_peak_lag * sample_spacing_corr;
+        setcolor(LIGHTRED);
+        line(x,260,x,460); // yeah
+        return true; 
+    } else {
+        return false; 
+    }
 }
 
-void drawFrequencyVariation(int *Index,int start, int sample_number ) {
-	float sample_spacing = (float)(900)/sample_number;
-	int index = *Index;
-	int x = 100 + (start + index)*sample_spacing;
-	
-	double f0 = 16000/index;
-	int y = 690 - (f0-80)/320*200;
-	if ( f0 < 400 && f0 > 160 ) {
-		circle(x , y, 3);
-	}
-}
+
 
 void calculateAndDrawAutoCorrelationAndWWaveForm(int16_t *data, int start, int window_size, float *autocorr, int color, int startY) {
 	
@@ -365,16 +351,16 @@ void drawAndClearAutoCorrelation(int16_t *data, int num_samples, int color, int 
         
         // ve do thi tan so
         int position = 0;
-        float f0 = 0.0;
-        if(find_periodic_peak(autocorr,&f0,&position))
-        {
-			if ( f0 < 360 && f0 > 160 ) {
-				int x = 100 + (start + position)*sample_spacing;
-				int y = 690 - (int)(f0)/2;
+        double f0 = 0.0;
+        if (find_periodic_peak(autocorr, 256, &f0, &position) ){
+	        if(f0 <= 360 && f0 > 150){
+	        	//printf("%f\n",f0);
+				int x = 100 + sample_spacing * (start + position) ;
+				int y = (int) 690 - f0/2;
 				setcolor(LIGHTGREEN);
-				circle(x , y, 3);
+				circle(x,y,3);
+				}
 			}
-		}
 		
         delay(300);
         if(start + window_size/2 < num_samples ) drawLineInWaveForm(start,sample_spacing,WHITE);
@@ -389,34 +375,39 @@ int main() {
 
     //Open and read file
 	FILE* infile;
-	OPENFILENAME ofn;
-    char szFile[260];
-    ZeroMemory(&ofn, sizeof(ofn));
-    ofn.lStructSize = sizeof(ofn);
-    ofn.hwndOwner = NULL;
-    ofn.lpstrFile = szFile;
-    ofn.lpstrFile[0] = '\0';
-    ofn.nMaxFile = sizeof(szFile);
-    ofn.lpstrFilter = "WAV Files (*.wav)\0*.wav\0All Files (*.*)\0*.*\0";
-    ofn.nFilterIndex = 1;
-    ofn.lpstrFileTitle = NULL;
-    ofn.nMaxFileTitle = 0;
-    ofn.lpstrInitialDir = NULL;
-    ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
-
-    if (GetOpenFileName(&ofn) == TRUE) {
-        // M? t?p tin dã ch?n
-        infile = fopen(ofn.lpstrFile, "rb");
-        if (infile == NULL) {
-        	perror("Error opening file");
-        	exit(1);
-        }
+	infile = fopen("xebesvexchef.wav", "rb");
+    if (infile == NULL) {
+        perror("Error opening file");
+        return 1;
     }
-    else {
-        // Ngu?i dùng dã h?y h?p tho?i ch?n t?p tin
-        printf("Nguoi dung da huy.\n");
-        exit(1);
-    }
+//	OPENFILENAME ofn;
+//    char szFile[260];
+//    ZeroMemory(&ofn, sizeof(ofn));
+//    ofn.lStructSize = sizeof(ofn);
+//    ofn.hwndOwner = NULL;
+//    ofn.lpstrFile = szFile;
+//    ofn.lpstrFile[0] = '\0';
+//    ofn.nMaxFile = sizeof(szFile);
+//    ofn.lpstrFilter = "WAV Files (*.wav)\0*.wav\0All Files (*.*)\0*.*\0";
+//    ofn.nFilterIndex = 1;
+//    ofn.lpstrFileTitle = NULL;
+//    ofn.nMaxFileTitle = 0;
+//    ofn.lpstrInitialDir = NULL;
+//    ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+//
+//    if (GetOpenFileName(&ofn) == TRUE) {
+//        // M? t?p tin dã ch?n
+//        infile = fopen(ofn.lpstrFile, "rb");
+//        if (infile == NULL) {
+//        	perror("Error opening file");
+//        	exit(1);
+//        }
+//    }
+//    else {
+//        // Ngu?i dùng dã h?y h?p tho?i ch?n t?p tin
+//        printf("Nguoi dung da huy.\n");
+//        exit(1);
+//    }
     
     meta = (header_p)malloc(sizeof(header));
     fread(meta, 1, 36, infile); // Read the first 36 bytes
