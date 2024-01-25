@@ -280,14 +280,9 @@ void calculateAndDrawAutoCorrelationAndWWaveForm(int16_t *data, int start, int w
         //autocorr[delay] /= (window_size - delay); // Chia trung bình de chuan hoa gia tri ham tuong quan
     }
 
-    // Tìm giá tri max cua ham tu tuong quang trong doan 512 mau dang xet de 
-    // xac dinh bien do lon nhat cua do thi ham tu tuong quan 
-	
-	
-	float max_am = fabs(autocorr[0]);
-	
+    // Tìm giá tri max, min cua ham tu tuong quang trong doan 512 mau dang xet de 
 	float max_autocorr = 0, min_autocorr = autocorr[0];
-	for (int i = 1; i < window_size - 1; ++i) {
+	for (int i = 1; i < MAX_LAG ; i++) {
 	    if (autocorr[i] > max_autocorr) {
 	        max_autocorr = autocorr[i];
 	    }
@@ -295,6 +290,8 @@ void calculateAndDrawAutoCorrelationAndWWaveForm(int16_t *data, int start, int w
 	    	min_autocorr = autocorr[i];
 		}
 	}
+	
+	float max_am = fabs(autocorr[0]); // xac dinh bien do lon nhat cua do thi ham tu tuong quan 
 		
 	float sample_spacing_corr = (float)420.0 /  MAX_LAG;
     // ve do thi ham tu tuong quan
@@ -308,6 +305,7 @@ void calculateAndDrawAutoCorrelationAndWWaveForm(int16_t *data, int start, int w
         line(x1, y1, x2, y2);
     }
     
+    setcolor(LIGHTGREEN);
     setbkcolor(BLACK);
     char buffer[50] = {}, rightBuffer[15] = {};
 	strcat(buffer, "Max=");
@@ -327,7 +325,7 @@ bool findPeriodicPeak(float autocorr[], int size, double *f0,int *position) {
 
     // Tim dinh co gia tri tuong quan lon nhat 
     // do giong nu co tan so 150-400Hz nen duyet den mau thu 115
-    for (int i = 10; i < 115 ; i++) {
+    for (int i = 10; i < size/2 ; i++) {
         if (autocorr[i] > max_peak_value 
 		//&& autocorr[i] > autocorr[i-1] && autocorr[i] > autocorr[i+1]
 		) {
