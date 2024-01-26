@@ -101,7 +101,7 @@ void drawDashLineY(int x1, int y1, int x2, int y2,int dashLength, int gapLength)
 }
 
 // ve giao dien
-void drawInterface(){
+void drawInterface(float length){
 
 	// to mau xam ca hop thoai winbgi
 	drawFillRectangle(0,0,2000,2000,LIGHTGRAY);
@@ -143,8 +143,6 @@ void drawInterface(){
 	outtextxy(85, 130, string);
 	strcpy(string,"-29851");
 	outtextxy(40, 230, string);
-	strcpy(string,"5313.0ms");
-	outtextxy(1001, 130, string);
 	strcpy(string,"K = 256");
 	outtextxy(1001, 360, string);
 	strcpy(string,"0");
@@ -160,26 +158,21 @@ void drawInterface(){
 	
 	// ve cac toa do x cua cua so ve dang song va ve tan so
 	float number = 0;
+	int length_spacing = (int)length/11 ;
 	int x1 = 100;
 	for(int i = 1; i <= 8; i++){
 		x1 += 100;
-		number += 483;
+		number += length_spacing;
 		char charArr[10];
 		sprintf(charArr, "%.1f", number);
-		outtextxy(x1 - 15, 232, charArr);		
+		outtextxy(x1 - 15, 232, charArr);	
+		outtextxy(x1 - 15, 692, charArr);	
 	}
 	
-	number = 0;
-	int x2 = 100;
-	for(int i = 1; i <= 8; i++){
-		x2 += 100;
-		number += 483;
-		char charArr[10];
-		sprintf(charArr, "%.1f", number);
-		outtextxy(x2 - 15, 692, charArr);		
-	}
-	strcpy(string,"5313.0 ms");
-	outtextxy(985, 692, string);
+	char charArr[10];
+	sprintf(charArr, "%.1f", length);
+	outtextxy(1001, 130, charArr);
+	outtextxy(985, 692, charArr);
 }
 
 // ham ve do thi dang song cua file am thanh
@@ -365,7 +358,7 @@ void drawAndClearAutoCorrelation(int16_t *data, int num_samples, int color, int 
         int position = 0;
         double f0 = 0.0;
         if (findPeriodicPeak(autocorr, 256, &f0, &position) ){
-	        if(f0 <= 360 && f0 > 150){
+	        if(f0 <= 360 && f0 > 80){
 	        	//printf("%f\n",f0);
 				int x = 100 + sample_spacing * (start + position) ;
 				int y = (int) 690 - f0/2;
@@ -466,10 +459,10 @@ int main(int argc, char *argv[]) {
 
 	// do dai thoi gian cua file
 	float timeLength = (meta->subchunk2_size * 8.0)/(meta->sample_rate * meta->num_channels * meta->bits_per_sample);
-    
+    timeLength = timeLength * 1000 + 1; // quy doi ra ms 
     // Ve cac do thi o cac cua so
     
-    drawInterface();
+    drawInterface(timeLength);
     
 	drawWaveform(inbuff16, SampleNumber,29851, GREEN, 130);
 	
